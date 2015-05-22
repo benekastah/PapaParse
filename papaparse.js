@@ -1,7 +1,9 @@
 /*!
 	Papa Parse
-	v4.1.0
-	https://github.com/mholt/PapaParse
+	v4.1.0-custom (4.1.0-custom branch)
+	https://github.com/benekastah/PapaParse
+
+	A custom papaparse file with a fix for https://github.com/mholt/PapaParse/issues/188
 */
 (function(global)
 {
