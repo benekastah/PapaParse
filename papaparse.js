@@ -7,7 +7,8 @@
 {
 	"use strict";
 
-	var IS_WORKER = !global.document, LOADED_SYNC = false, AUTO_SCRIPT_PATH;
+	var IS_WORKER = (!global.document && !!global.postMessage && /(\?|&)worker(=|&|$)/.test(global.location.search)),
+		LOADED_SYNC = false, AUTO_SCRIPT_PATH;
 	var workers = {}, workerIdCounter = 0;
 
 	global.Papa = {};
@@ -1217,7 +1218,10 @@
 				'Script path cannot be determined automatically when Papa Parse is loaded asynchronously. ' +
 				'You need to set Papa.SCRIPT_PATH manually.'
 			);
-		var w = new global.Worker(Papa.SCRIPT_PATH || AUTO_SCRIPT_PATH);
+		var workerUrl = Papa.SCRIPT_PATH || AUTO_SCRIPT_PATH;
+		// Append "worker" to the search string to tell papaparse to operate in worker mode.
+		workerUrl += (workerUrl.indexOf('?') != -1 ? '&' : '?') + 'worker';
+		var w = new global.Worker(workerUrl);
 		w.onmessage = mainThreadReceivedMessage;
 		w.id = workerIdCounter++;
 		workers[w.id] = w;
@@ -1333,4 +1337,6 @@
 	{
 		return typeof func === 'function';
 	}
-})(this);
+})(typeof window !== 'undefined' ? window : this);
+
+// vim: noet

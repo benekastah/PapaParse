@@ -1283,5 +1283,88 @@ var CUSTOM_TESTS = [
 				}
 			});
 		}
+	},
+	{
+		description: "beforeFirstChunk manipulates only first chunk",
+		expected: 7,
+		run: function(callback) {
+			var updates = 0;
+			Papa.parse("/tests/long-sample.csv", {
+				download: true,
+				chunkSize: 500,
+				beforeFirstChunk: function(chunk) {
+					return chunk.replace(/.*?\n/, '');
+				},
+				step: function(response) {
+					updates++;
+				},
+				complete: function() {
+					callback(updates);
+				}
+			});
+		}
+	},
+	{
+		description: "First chunk not modified if beforeFirstChunk returns nothing",
+		expected: 8,
+		run: function(callback) {
+			var updates = 0;
+			Papa.parse("/tests/long-sample.csv", {
+				download: true,
+				chunkSize: 500,
+				beforeFirstChunk: function(chunk) {
+				},
+				step: function(response) {
+					updates++;
+				},
+				complete: function() {
+					callback(updates);
+				}
+			});
+		}
+	},
+	{
+		description: "Should not operate as a worker unless worker is in the search string",
+		expected: [false, true, true, true, true],
+		run: function(callback) {
+			if (!self.Worker) {
+				callback(false);
+				return;
+			}
+			var searchStrings = [
+				'',
+				'?worker',
+				'?x=1&worker',
+				'?x=1&worker&y=1',
+				'?x=1&worker=1'
+			];
+			var results = searchStrings.map(function () { return false; });
+
+			var numResults = 0;
+			var setResult = function (idx, result) {
+				results[idx] = result;
+				numResults += 1;
+				if (numResults === results.length) {
+					callback(results);
+				}
+			};
+
+			searchStrings.forEach(function (searchString, idx) {
+				var w = new self.Worker('../papaparse.js' + searchString);
+				// Give it .5s to do something
+				var timeout = setTimeout(function () {
+					w.terminate();
+					setResult(idx, false);
+				}, 500);
+				w.addEventListener('message', function () {
+					w.terminate();
+					clearTimeout(timeout);
+					setResult(idx, true);
+				});
+				w.postMessage({input: 'a,b,c\n1,2,3'});
+			});
+		}
 	}
 ];
+
+// vim: noet
